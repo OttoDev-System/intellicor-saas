@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowRight, Shield, Users, Award } from 'lucide-react';
+import { ArrowRight, Shield, Users, Award, LogIn } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useTenant } from '@/providers/TenantProvider';
 
@@ -59,6 +60,16 @@ export const HeroSection: React.FC = () => {
             >
               Falar no WhatsApp
             </Button>
+            <Link to="/login">
+              <Button 
+                variant="ghost" 
+                size="lg"
+                className="text-lg px-8 py-6 h-auto text-muted-foreground hover:text-foreground"
+              >
+                <LogIn className="mr-2 h-5 w-5" />
+                Área do Cliente
+              </Button>
+            </Link>
           </div>
 
           {/* Stats */}

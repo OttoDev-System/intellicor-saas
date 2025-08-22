@@ -6,7 +6,10 @@ export interface User {
   fullName: string;
   role: UserRole;
   organizationId: string;
-  avatar?: string;
+  avatarUrl?: string;
+  phone?: string;
+  isActive: boolean;
+  lastLogin?: string;
   createdAt: string;
 }
 
@@ -14,14 +17,29 @@ export interface Organization {
   id: string;
   name: string;
   subdomain: string;
-  logo?: string;
-  settings: {
-    theme: {
-      primaryColor: string;
-      secondaryColor: string;
-    };
-    features: string[];
+  logoUrl?: string;
+  theme: {
+    primaryColor: string;
+    secondaryColor: string;
+    accentColor?: string;
   };
+  settings: {
+    allowRegistration: boolean;
+    requireEmailVerification: boolean;
+    sessionTimeout: number;
+    chatbotEnabled: boolean;
+    contactInfo: {
+      phone: string;
+      email: string;
+      address?: string;
+    };
+    socialMedia?: {
+      facebook?: string;
+      instagram?: string;
+      linkedin?: string;
+    };
+  };
+  subscriptionStatus: 'trial' | 'active' | 'suspended' | 'cancelled';
   createdAt: string;
 }
 

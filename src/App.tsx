@@ -5,11 +5,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { AuthProvider, useAuth } from "@/providers/AuthProvider";
+import { TenantProvider } from "@/providers/TenantProvider";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import AdminDashboard from "@/pages/dashboards/AdminDashboard";
 import BrokerDashboard from "@/pages/dashboards/BrokerDashboard";
 import SupportDashboard from "@/pages/dashboards/SupportDashboard";
+import { LoginPage } from "@/pages/auth/LoginPage";
+import { RegisterPage } from "@/pages/auth/RegisterPage";
+import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
+import { LandingPage } from "@/pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -21,16 +27,19 @@ const queryClient = new QueryClient({
   },
 });
 
-// Protected route wrapper
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isLoading, isAuthenticated } = useAuth();
+// Public route wrapper (redirects authenticated users)
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isLoading, isAuthenticated, user } = useAuth();
 
   if (isLoading) {
-    return <LoadingScreen message="Carregando INTELLICOR..." />;
+    return <LoadingScreen message="Carregando..." />;
   }
 
-  if (!isAuthenticated) {
-    return <LoadingScreen message="Redirecionando para login..." />;
+  if (isAuthenticated && user) {
+    const redirectPath = user.role === 'admin' ? '/admin' : 
+                        user.role === 'corretor' ? '/broker' : 
+                        '/support';
+    return <Navigate to={redirectPath} replace />;
   }
 
   return <>{children}</>;
@@ -57,18 +66,36 @@ const DashboardRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // Main App Routes
 const AppRoutes: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   return (
     <Routes>
-      {/* Default redirect based on user role */}
+      {/* Landing page for public */}
+      <Route path="/" element={<LandingPage />} />
+      
+      {/* Authentication Routes */}
       <Route 
-        path="/" 
+        path="/login" 
         element={
-          <Navigate 
-            to={user ? `/${user.role}` : '/admin'} 
-            replace 
-          />
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        } 
+      />
+      <Route 
+        path="/register" 
+        element={
+          <PublicRoute>
+            <RegisterPage />
+          </PublicRoute>
+        } 
+      />
+      <Route 
+        path="/forgot-password" 
+        element={
+          <PublicRoute>
+            <ForgotPasswordPage />
+          </PublicRoute>
         } 
       />
 
@@ -76,7 +103,7 @@ const AppRoutes: React.FC = () => {
       <Route 
         path="/admin/*" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="admin">
             <DashboardRoute>
               <Routes>
                 <Route index element={<AdminDashboard />} />
@@ -97,7 +124,7 @@ const AppRoutes: React.FC = () => {
       <Route 
         path="/broker/*" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="corretor">
             <DashboardRoute>
               <Routes>
                 <Route index element={<BrokerDashboard />} />
@@ -115,9 +142,9 @@ const AppRoutes: React.FC = () => {
 
       {/* Support Routes */}
       <Route 
-        path="/support/*" 
+        path="/suporte/*" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredRole="suporte">
             <DashboardRoute>
               <Routes>
                 <Route index element={<SupportDashboard />} />
@@ -142,15 +169,17 @@ const AppRoutes: React.FC = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
+      <TenantProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </TenantProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
